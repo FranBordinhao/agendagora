@@ -15,15 +15,14 @@ $stmt->execute([$email]);
 $usuario = $stmt->fetch();
 
 if (!$usuario || !password_verify($senha, $usuario['senha'])) {
-    die("E-mail ou senha inválidos.");
+    header("Location: login.php?erro=1");
+    exit;
 }
 
-// cria sessão
 $_SESSION['usuario_id'] = $usuario['id'];
 $_SESSION['usuario_nome'] = $usuario['nome'];
 $_SESSION['usuario_tipo'] = $usuario['tipo'];
 
-// redireciona
 if ($usuario['tipo'] === 'cliente') {
     header("Location: ../dashboard/painel_cliente.php");
     exit;
