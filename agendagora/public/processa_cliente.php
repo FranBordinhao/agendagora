@@ -10,24 +10,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $senha = password_hash($_POST["senha"], PASSWORD_DEFAULT);
     $tipo = "cliente";
 
-    $verifica = $pdo->prepare("SELECT id FROM usuarios WHERE email = :email");
-    $verifica->bindParam(":email", $email);
-    $verifica->execute();
+    // Verifica email duplicado
+    $verifica = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+    $verifica->execute([$email]);
 
     if ($verifica->rowCount() > 0) {
         die("Este e-mail já está cadastrado.");
     }
 
-    $sql = "INSERT INTO usuarios (nome, email, telefone, senha, tipo)
-            VALUES (:nome, :email, :telefone, :senha, :tipo)";
+    // Insere em usuarios
+    $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, telefone, senha, tipo) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$nome, $email, $telefone, $senha, $tipo]);
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(":nome", $nome);
-    $stmt->bindParam(":email", $email);
-    $stmt->bindParam(":telefone", $telefone);
-    $stmt->bindParam(":senha", $senha);
-    $stmt->bindParam(":tipo", $tipo);
-    $stmt->execute();
+    $id = $pdo->lastInsertId();
+
+    // Insere também na tabela clientes
+    $stmtCliente = $pdo->prepare("INSERT INTO clientes (usuario_id, telefone) VALUES (?, ?)");
+    $stmtCliente->execute([$id, $telefone]);
 
     header("Location: ../dashboard/clientes.php");
     exit;
