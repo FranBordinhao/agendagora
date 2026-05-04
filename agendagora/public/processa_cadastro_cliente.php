@@ -10,36 +10,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
     $tipo = 'cliente';
 
-    // verifica email duplicado
-    $verifica = $pdo->prepare("SELECT id FROM usuarios WHERE email = :email");
-    $verifica->bindParam(':email', $email);
-    $verifica->execute();
+    // Verifica email duplicado
+    $verifica = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+    $verifica->execute([$email]);
 
     if ($verifica->rowCount() > 0) {
         die("Este e-mail já está cadastrado.");
     }
 
-    $sql = "INSERT INTO usuarios (nome, email, telefone, senha, tipo)
-            VALUES (:nome, :email, :telefone, :senha, :tipo)";
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':nome', $nome);
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':telefone', $telefone);
-    $stmt->bindParam(':senha', $senha);
-    $stmt->bindParam(':tipo', $tipo);
-
-    $stmt->execute();
+    // Insere em usuarios
+    $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, telefone, senha, tipo) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$nome, $email, $telefone, $senha, $tipo]);
 
     $id = $pdo->lastInsertId();
 
-    // cria sessão automática
+    // Insere também na tabela clientes
+    $stmtCliente = $pdo->prepare("INSERT INTO clientes (usuario_id, telefone) VALUES (?, ?)");
+    $stmtCliente->execute([$id, $telefone]);
+
+    // Cria sessão
     $_SESSION['usuario_id'] = $id;
     $_SESSION['usuario_nome'] = $nome;
     $_SESSION['usuario_tipo'] = 'cliente';
 
-    // vai direto para o painel
     header("Location: ../dashboard/painel_cliente.php");
     exit;
 }
-?>
